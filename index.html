@@ -20,24 +20,30 @@
       transform: translate(-50%, -50%);
       text-align: center;
       color: #f2e6d8;
+      cursor: move;
     }
-    .label-row {
+    .label-row, .digits-row {
       display: flex;
       justify-content: center;
       gap: 10px;
-      font-size: 12px;
     }
-    .digits-row {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      font-size: 20px;
-      font-weight: bold;
+    .label-row { font-size: 12px; }
+    .digits-row { font-size: 20px; font-weight: bold; }
+    .timer-title, .start-time {
+      background: transparent;
+      border: none;
+      text-align: center;
+      color: #f2e6d8;
+      font-size: 14px;
+    }
+    .timer-title::placeholder, .start-time::placeholder {
+      color: #aaa;
     }
   </style>
 </head>
 <body>
   <div id="timers"></div>
+
   <script>
     const positions = [
       { id: 'A', left: 218, top: 261 },
@@ -47,12 +53,35 @@
       { id: 'E', left: 669, top: 725 },
       { id: 'F', left: 1105, top: 725 }
     ];
-    function createTimer(id, startTime) {
+
+    function createTimer(id, left, top, title, startTime) {
       const container = document.createElement("div");
       container.className = "timer-container";
       container.id = "timer-" + id;
-      container.style.left = positions.find(p => p.id === id).left + "px";
-      container.style.top = positions.find(p => p.id === id).top + "px";
+      container.style.left = left + "px";
+      container.style.top = top + "px";
+
+      container.setAttribute("draggable", "true");
+      container.ondragstart = e => {
+        e.dataTransfer.setData("text/plain", id);
+      };
+
+      const titleInput = document.createElement("input");
+      titleInput.className = "timer-title";
+      titleInput.placeholder = "Barrel " + id;
+      titleInput.value = title || "";
+      titleInput.onchange = () => {
+        localStorage.setItem("title-" + id, titleInput.value);
+      };
+
+      const startInput = document.createElement("input");
+      startInput.className = "start-time";
+      startInput.type = "datetime-local";
+      startInput.value = startTime.toISOString().slice(0, 16);
+      startInput.onchange = () => {
+        localStorage.setItem("start-" + id, new Date(startInput.value).toISOString());
+        location.reload();
+      };
 
       const labels = document.createElement("div");
       labels.className = "label-row";
@@ -63,6 +92,8 @@
       digits.id = "digits-" + id;
       digits.innerHTML = "<div>000</div><div>00</div><div>00</div><div>00</div>";
 
+      container.appendChild(titleInput);
+      container.appendChild(startInput);
       container.appendChild(labels);
       container.appendChild(digits);
       document.getElementById("timers").appendChild(container);
@@ -78,15 +109,41 @@
         requestAnimationFrame(update);
       }
       update();
+
+      container.onmousedown = function (e) {
+        let shiftX = e.clientX - container.getBoundingClientRect().left;
+        let shiftY = e.clientY - container.getBoundingClientRect().top;
+
+        function moveAt(pageX, pageY) {
+          container.style.left = pageX - shiftX + 'px';
+          container.style.top = pageY - shiftY + 'px';
+        }
+
+        function onMouseMove(e) {
+          moveAt(e.pageX, e.pageY);
+        }
+
+        document.addEventListener('mousemove', onMouseMove);
+
+        container.onmouseup = function () {
+          document.removeEventListener('mousemove', onMouseMove);
+          container.onmouseup = null;
+          localStorage.setItem("pos-" + id, JSON.stringify({ left: container.offsetLeft, top: container.offsetTop }));
+        };
+      };
+
+      container.ondragstart = () => false;
     }
 
     window.onload = () => {
       const now = new Date();
       positions.forEach((pos, i) => {
-        const stored = localStorage.getItem("start-" + pos.id);
-        const startTime = stored ? new Date(stored) : new Date(now - i * 10000000);
+        const storedStart = localStorage.getItem("start-" + pos.id);
+        const storedTitle = localStorage.getItem("title-" + pos.id);
+        const storedPos = JSON.parse(localStorage.getItem("pos-" + pos.id)) || { left: pos.left, top: pos.top };
+        const startTime = storedStart ? new Date(storedStart) : new Date(now - i * 10000000);
         localStorage.setItem("start-" + pos.id, startTime.toISOString());
-        createTimer(pos.id, startTime);
+        createTimer(pos.id, storedPos.left, storedPos.top, storedTitle, startTime);
       });
 
       if ('serviceWorker' in navigator) {
