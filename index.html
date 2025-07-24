@@ -6,15 +6,65 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Barrel Timer</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    body {
+      background-color: #2d1e12;
+      margin: 0;
+      font-family: sans-serif;
+      color: #f2e6d8;
+      text-align: center;
+    }
+    h1 {
+      margin: 20px;
+    }
+    .timer {
+      background: none;
+      padding: 10px;
+      margin: 10px;
+      font-size: 1.5em;
+      display: inline-block;
+      border: 2px solid #f2e6d8;
+      border-radius: 10px;
+    }
+  </style>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('service-worker.js');
       });
     }
+    let timers = [];
+
+    function startTimers() {
+      const container = document.getElementById("timers");
+      for (let i = 0; i < 6; i++) {
+        const div = document.createElement("div");
+        div.className = "timer";
+        div.id = "timer" + i;
+        div.innerText = "00:00:00";
+        container.appendChild(div);
+        timers.push({ id: div.id, start: Date.now() - (i * 10000000) });
+      }
+      updateTimers();
+    }
+
+    function updateTimers() {
+      timers.forEach(t => {
+        const elapsed = Date.now() - t.start;
+        const totalSeconds = Math.floor(elapsed / 1000);
+        const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+        const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+        const s = String(totalSeconds % 60).padStart(2, '0');
+        document.getElementById(t.id).innerText = `${h}:${m}:${s}`;
+      });
+      requestAnimationFrame(updateTimers);
+    }
+
+    window.onload = startTimers;
   </script>
 </head>
 <body>
-  <h1 style="text-align:center; color:white;">Barrel Timer Placeholder</h1>
+  <h1>Barrel Aging Timers</h1>
+  <div id="timers"></div>
 </body>
 </html>

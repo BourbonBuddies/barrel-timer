@@ -4,8 +4,8 @@
   "short_name": "BarrelTimer",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#2d1e12",
+  "theme_color": "#2d1e12",
   "orientation": "portrait",
   "icons": [
     {
