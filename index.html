@@ -104,7 +104,26 @@
       lockBtn.style.cursor = "pointer";
       lockBtn.title = "Lock position";
 
-      lockBtn.onclick = () => {
+      
+    lockBtn.onclick = () => {
+      const isLocked = container.getAttribute("data-locked") === "true";
+      if (isLocked) {
+        container.setAttribute("data-locked", "false");
+        lockBtn.innerText = "🔓";
+        localStorage.setItem("locked-" + id, "false");
+        requestAnimationFrame(() => {
+          container.addEventListener("mousedown", dragStart);
+          container.addEventListener("touchstart", dragStart);
+        });
+      } else {
+        container.setAttribute("data-locked", "true");
+        lockBtn.innerText = "🔒";
+        localStorage.setItem("locked-" + id, "true");
+        container.removeEventListener("mousedown", dragStart);
+        container.removeEventListener("touchstart", dragStart);
+      }
+    };
+    
         container.setAttribute("data-locked", "true");
         lockBtn.innerText = "🔒";
         localStorage.setItem("locked-" + id, "true");
