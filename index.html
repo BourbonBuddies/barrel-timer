@@ -100,7 +100,24 @@
       container.appendChild(startInput);
       container.appendChild(document.createElement("br"));
       container.appendChild(labels);
+      
+      const lockBtn = document.createElement("button");
+      lockBtn.innerText = "🔒";
+      lockBtn.style.background = "transparent";
+      lockBtn.style.border = "none";
+      lockBtn.style.color = "#f2e6d8";
+      lockBtn.style.fontSize = "18px";
+      lockBtn.style.cursor = "pointer";
+      lockBtn.title = "Lock position";
+      lockBtn.onclick = () => {
+        container.setAttribute("data-locked", "true");
+        lockBtn.disabled = true;
+        lockBtn.innerText = "✅";
+        localStorage.setItem("locked-" + id, "true");
+      };
       container.appendChild(digits);
+      container.appendChild(lockBtn);
+    
       document.getElementById("timers").appendChild(container);
 
       function update() {
@@ -138,7 +155,12 @@
         localStorage.setItem("pos-" + id, JSON.stringify({ left: container.offsetLeft, top: container.offsetTop }));
       };
 
-      container.addEventListener("mousedown", dragStart);
+      
+      if (localStorage.getItem("locked-" + id) !== "true") {
+        container.addEventListener("mousedown", dragStart);
+        container.addEventListener("touchstart", dragStart);
+      }
+    
       container.addEventListener("touchstart", dragStart);
     }
 
