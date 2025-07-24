@@ -16,7 +16,8 @@
       color: #f2e6d8;
     }
     .timer-container {
-      position: absolute; max-width: 100%;
+      position: absolute;
+      max-width: 100%;
       transform: translate(-50%, -50%);
       text-align: center;
       color: #f2e6d8;
@@ -66,8 +67,8 @@
       const container = document.createElement("div");
       container.className = "timer-container";
       container.id = "timer-" + id;
-      container.style.left = `calc(${(left / 1400 * 100).toFixed(2)}%)`;
-      container.style.top = `calc(${(top / 900 * 100).toFixed(2)}%)`;
+      container.style.left = (left / window.innerWidth) * 100 + "%";
+      container.style.top = (top / window.innerHeight) * 100 + "%";
 
       const titleInput = document.createElement("input");
       titleInput.className = "timer-title";
@@ -95,29 +96,38 @@
       digits.id = "digits-" + id;
       digits.innerHTML = "<div>000</div><div>00</div><div>00</div><div>00</div>";
 
-      container.appendChild(titleInput);
-      container.appendChild(document.createElement("br"));
-      container.appendChild(startInput);
-      container.appendChild(document.createElement("br"));
-      container.appendChild(labels);
-      
       const lockBtn = document.createElement("button");
-      lockBtn.innerText = "🔒";
+      
+      lockBtn.innerText = localStorage.getItem("locked-" + id) === "true" ? "🔒" : "🔓";
+    
       lockBtn.style.background = "transparent";
       lockBtn.style.border = "none";
       lockBtn.style.color = "#f2e6d8";
       lockBtn.style.fontSize = "18px";
       lockBtn.style.cursor = "pointer";
       lockBtn.title = "Lock position";
+      
       lockBtn.onclick = () => {
+        if (container.getAttribute("data-locked") === "true") return;
+        container.setAttribute("data-locked", "true");
+        lockBtn.disabled = true;
+        lockBtn.innerText = "🔒";
+        localStorage.setItem("locked-" + id, "true");
+      };
+    
         container.setAttribute("data-locked", "true");
         lockBtn.disabled = true;
         lockBtn.innerText = "✅";
         localStorage.setItem("locked-" + id, "true");
       };
+
+      container.appendChild(titleInput);
+      container.appendChild(document.createElement("br"));
+      container.appendChild(startInput);
+      container.appendChild(document.createElement("br"));
+      container.appendChild(labels);
       container.appendChild(digits);
       container.appendChild(lockBtn);
-    
       document.getElementById("timers").appendChild(container);
 
       function update() {
@@ -135,6 +145,7 @@
       let offsetX = 0, offsetY = 0;
 
       const dragStart = (e) => {
+        if (container.getAttribute("data-locked") === "true") return;
         const rect = container.getBoundingClientRect();
         offsetX = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
         offsetY = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
@@ -145,8 +156,8 @@
       const dragMove = (e) => {
         const x = (e.touches ? e.touches[0].pageX : e.pageX) - offsetX;
         const y = (e.touches ? e.touches[0].pageY : e.pageY) - offsetY;
-        container.style.left = x + 'px';
-        container.style.top = y + 'px';
+        container.style.left = (x / window.innerWidth) * 100 + '%';
+        container.style.top = (y / window.innerHeight) * 100 + '%';
       };
 
       const dragEnd = (e) => {
@@ -155,13 +166,10 @@
         localStorage.setItem("pos-" + id, JSON.stringify({ left: container.offsetLeft, top: container.offsetTop }));
       };
 
-      
       if (localStorage.getItem("locked-" + id) !== "true") {
         container.addEventListener("mousedown", dragStart);
         container.addEventListener("touchstart", dragStart);
       }
-    
-      container.addEventListener("touchstart", dragStart);
     }
 
     window.onload = () => {
@@ -180,59 +188,5 @@
       }
     }
   </script>
-
-    <button id="global-lock" style="
-      position: fixed;
-      bottom: 10px;
-      right: 10px;
-      font-size: 18px;
-      background: #663300;
-      color: #fff;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 8px;
-      cursor: pointer;
-      z-index: 9999;
-    ">🔒 Lock All</button>
-
-    <script>
-      document.getElementById("global-lock").addEventListener("click", () => {
-        document.querySelectorAll(".timer-container").forEach(el => {
-          el.setAttribute("data-locked", "true");
-          localStorage.setItem("locked-" + el.id.split('-')[1], "true");
-          const btn = el.querySelector("button");
-          if (btn) {
-            btn.innerText = "✅";
-            btn.disabled = true;
-          }
-        });
-      });
-
-      // Adjust all stored positions to percentage-based layout
-      function adjustPositionsToPercent() {
-        const screenWidth = window.innerWidth;
-        const screenHeight = window.innerHeight;
-        document.querySelectorAll(".timer-container").forEach(el => {
-          const id = el.id.split('-')[1];
-          const pos = localStorage.getItem("pos-" + id);
-          if (pos) {
-            const parsed = JSON.parse(pos);
-            const leftPercent = (parsed.left / screenWidth) * 100;
-            const topPercent = (parsed.top / screenHeight) * 100;
-            el.style.left = leftPercent + "%";
-            el.style.top = topPercent + "%";
-          }
-        });
-      }
-
-      window.addEventListener('resize', () => {
-        adjustPositionsToPercent();
-      });
-
-      window.onload = () => {
-        adjustPositionsToPercent();
-      };
-    </script>
-    </body>
-    
+</body>
 </html>
