@@ -138,8 +138,8 @@
         localStorage.setItem("pos-" + id, JSON.stringify({ left: container.offsetLeft, top: container.offsetTop }));
       };
 
-      if (!localStorage.getItem("pos-" + id)) container.addEventListener("mousedown", dragStart);
-      if (!localStorage.getItem("pos-" + id)) container.addEventListener("touchstart", dragStart);
+      container.addEventListener("mousedown", dragStart);
+      container.addEventListener("touchstart", dragStart);
     }
 
     window.onload = () => {
