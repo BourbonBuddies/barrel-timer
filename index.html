@@ -180,5 +180,59 @@
       }
     }
   </script>
-</body>
+
+    <button id="global-lock" style="
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      font-size: 18px;
+      background: #663300;
+      color: #fff;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      z-index: 9999;
+    ">🔒 Lock All</button>
+
+    <script>
+      document.getElementById("global-lock").addEventListener("click", () => {
+        document.querySelectorAll(".timer-container").forEach(el => {
+          el.setAttribute("data-locked", "true");
+          localStorage.setItem("locked-" + el.id.split('-')[1], "true");
+          const btn = el.querySelector("button");
+          if (btn) {
+            btn.innerText = "✅";
+            btn.disabled = true;
+          }
+        });
+      });
+
+      // Adjust all stored positions to percentage-based layout
+      function adjustPositionsToPercent() {
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        document.querySelectorAll(".timer-container").forEach(el => {
+          const id = el.id.split('-')[1];
+          const pos = localStorage.getItem("pos-" + id);
+          if (pos) {
+            const parsed = JSON.parse(pos);
+            const leftPercent = (parsed.left / screenWidth) * 100;
+            const topPercent = (parsed.top / screenHeight) * 100;
+            el.style.left = leftPercent + "%";
+            el.style.top = topPercent + "%";
+          }
+        });
+      }
+
+      window.addEventListener('resize', () => {
+        adjustPositionsToPercent();
+      });
+
+      window.onload = () => {
+        adjustPositionsToPercent();
+      };
+    </script>
+    </body>
+    
 </html>
