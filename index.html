@@ -104,7 +104,24 @@
       lockBtn.style.cursor = "pointer";
       lockBtn.title = "Lock position";
 
-      lockBtn.onclick = () => {
+      
+    lockBtn.onclick = () => {
+      const isLocked = container.getAttribute("data-locked") === "true";
+      if (isLocked) {
+        container.setAttribute("data-locked", "false");
+        lockBtn.innerText = "🔓";
+        localStorage.setItem("locked-" + id, "false");
+        container.addEventListener("mousedown", dragStart);
+        container.addEventListener("touchstart", dragStart);
+      } else {
+        container.setAttribute("data-locked", "true");
+        lockBtn.innerText = "🔒";
+        localStorage.setItem("locked-" + id, "true");
+        container.removeEventListener("mousedown", dragStart);
+        container.removeEventListener("touchstart", dragStart);
+      }
+    };
+    
         container.setAttribute("data-locked", "true");
         lockBtn.innerText = "🔒";
         localStorage.setItem("locked-" + id, "true");
@@ -138,7 +155,29 @@
       update();
 
       let offsetX = 0, offsetY = 0;
-      const dragStart = (e) => {
+      
+    function dragStart(e) {
+      if (container.getAttribute("data-locked") === "true") return;
+      const rect = container.getBoundingClientRect();
+      offsetX = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+      offsetY = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+      document.addEventListener(e.type === 'touchstart' ? 'touchmove' : 'mousemove', dragMove);
+      document.addEventListener(e.type === 'touchstart' ? 'touchend' : 'mouseup', dragEnd);
+    }
+
+    function dragMove(e) {
+      const x = (e.touches ? e.touches[0].pageX : e.pageX) - offsetX;
+      const y = (e.touches ? e.touches[0].pageY : e.pageY) - offsetY;
+      container.style.left = (x / window.innerWidth) * 100 + '%';
+      container.style.top = (y / window.innerHeight) * 100 + '%';
+    }
+
+    function dragEnd(e) {
+      document.removeEventListener(e.type === 'touchend' ? 'touchmove' : 'mousemove', dragMove);
+      document.removeEventListener(e.type === 'touchend' ? 'touchend' : 'mouseup', dragEnd);
+      localStorage.setItem("pos-" + id, JSON.stringify({ left: container.offsetLeft, top: container.offsetTop }));
+    }
+    
         if (container.getAttribute("data-locked") === "true") return;
         const rect = container.getBoundingClientRect();
         offsetX = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
