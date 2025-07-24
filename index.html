@@ -177,7 +177,18 @@
       positions.forEach((pos, i) => {
         const storedStart = localStorage.getItem("start-" + pos.id);
         const storedTitle = localStorage.getItem("title-" + pos.id);
-        const storedPos = JSON.parse(localStorage.getItem("pos-" + pos.id)) || { left: pos.left, top: pos.top };
+        
+    let storedPos = localStorage.getItem("pos-" + pos.id);
+    if (storedPos) {
+      try {
+        storedPos = JSON.parse(storedPos);
+      } catch {
+        storedPos = { left: pos.left, top: pos.top };
+      }
+    } else {
+      storedPos = { left: pos.left, top: pos.top };
+    }
+    
         const startTime = storedStart ? new Date(storedStart) : new Date(now - i * 10000000);
         localStorage.setItem("start-" + pos.id, startTime.toISOString());
         createTimer(pos.id, storedPos.left, storedPos.top, storedTitle, startTime);
