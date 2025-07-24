@@ -1,122 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum‑scale=1.0, user-scalable=no">
-  <title>Barrel Timer</title>
-  <style>
-    body, html { margin:0; padding:0; height:100%; }
-    body {
-      background: url('barrel_background.png') no-repeat center center fixed;
-      background-size: cover;
-      font-family: sans-serif;
-      color: #f2e6d8;
-      overflow: hidden;
-    }
-    .timer {
-      position:absolute;
-      transform: translate(-50%,-50%);
-      text-align:center;
-      cursor:move;
-    }
-    .timer input[type="text"], .timer input[type="datetime-local"] {
-      background:none; border:none; color:#f2e6d8; text-align:center;
-      display:block; margin:4px auto;
-    }
-    .labels, .values { display:flex; justify-content:center; gap:8px; }
-    .labels div { font-size:12px; }
-    .values div { font-family:monospace; font-size:18px; }
-    .lock-btn {
-      background:transparent; border:none; color:#f2e6d8; font-size:18px;
-      display:block; margin:4px auto; cursor:pointer;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Barrel Timer</title>
+<style>
+  body { margin:0; padding:0; background: url('barrel_background.png') center/cover fixed; }
+  .timer { position:absolute; transform: translate(-50%,-50%); color:#f2e6d8; font-family:sans-serif; }
+  .labels, .values { display:flex; justify-content:center; gap:8px; }
+  .labels div { font-size:12px; }
+  .values div { font-family:monospace; font-size:18px; }
+  input { background:none; border:none; color:#f2e6d8; text-align:center; display:block; margin:2px auto; }
+  button { background:none; border:none; color:#f2e6d8; font-size:18px; display:block; margin:2px auto; cursor:pointer; }
+</style>
 </head>
 <body>
-  <div id="app"></div>
-  <script>
-    const coords = [
-      {id:'A', x:218, y:261},
-      {id:'B', x:669, y:261},
-      {id:'C', x:1105, y:261},
-      {id:'D', x:218, y:725},
-      {id:'E', x:669, y:725},
-      {id:'F', x:1105, y:725},
-    ];
-    function createTimer(cfg){
-      const t = document.createElement('div');
-      t.className='timer'; t.id='t'+cfg.id;
-      const savedPos=JSON.parse(localStorage.getItem('pos'+cfg.id)||'null');
-      const left=(savedPos?savedPos.x:cfg.x)/window.innerWidth*100;
-      const top=(savedPos?savedPos.y:cfg.y:cfg.y)/window.innerHeight*100;
-      t.style.left=left+'%'; t.style.top=top+'%';
-      const title=localStorage.getItem('title'+cfg.id)||'Barrel '+cfg.id;
-      const stime=new Date(localStorage.getItem('start'+cfg.id)||Date.now());
-      const ti=document.createElement('input');
-      ti.type='text'; ti.value=title;
-      ti.onchange=()=>localStorage.setItem('title'+cfg.id, ti.value);
-      const si=document.createElement('input');
-      si.type='datetime-local';
-      si.value=stime.toISOString().slice(0,16);
-      si.onchange=()=>localStorage.setItem('start'+cfg.id, new Date(si.value).toISOString());
-      const labels= document.createElement('div');
-      labels.className='labels';
-      ['Days','Hours','Min','Sec'].forEach(l=>{const d=document.createElement('div'); d.innerText=l; labels.appendChild(d);});
-      const values=document.createElement('div');
-      values.className='values'; values.id='v'+cfg.id;
-      ['000','00','00','00'].forEach(v=>{const d=document.createElement('div'); d.innerText=v; values.appendChild(d);});
-      const btn=document.createElement('button');
-      btn.className='lock-btn';
-      const locked=localStorage.getItem('lock'+cfg.id)==='1';
-      btn.innerText=locked?'🔒':'🔓';
-      btn.onclick=()=>{
-        const nl=!locked;
-        localStorage.setItem('lock'+cfg.id, nl?1:0);
-        btn.innerText=nl?'🔒':'🔓';
-      };
-      [ti,si,labels,values,btn].forEach(el=>t.appendChild(el));
-      let dx,dy;
-      function start(e){
-        if(localStorage.getItem('lock'+cfg.id)==='1') return;
-        e=e.touches?e.touches[0]:e;
-        const r=t.getBoundingClientRect();
-        dx=e.clientX-r.left; dy=e.clientY-r.top;
-        document.addEventListener('mousemove',move);
-        document.addEventListener('mouseup',end);
-        document.addEventListener('touchmove',move);
-        document.addEventListener('touchend',end);
-      }
-      function move(e){
-        e=e.touches?e.touches[0]:e;
-        const x=e.clientX-dx, y=e.clientY-dy;
-        t.style.left=(x/window.innerWidth*100)+'%';
-        t.style.top=(y/window.innerHeight*100)+'%';
-      }
-      function end(){
-        document.removeEventListener('mousemove',move);
-        document.removeEventListener('mouseup',end);
-        document.removeEventListener('touchmove',move);
-        document.removeEventListener('touchend',end);
-        const r=t.getBoundingClientRect();
-        localStorage.setItem('pos'+cfg.id, JSON.stringify({x:r.left,y:r.top}));
-      }
-      t.addEventListener('mousedown',start);
-      t.addEventListener('touchstart',start);
-      document.getElementById('app').appendChild(t);
-      function upd(){
-        const now=new Date(), s=localStorage.getItem('start'+cfg.id);
-        const d=(now-new Date(s))/1000;
-        const dd=String(Math.floor(d/86400)).padStart(3,'0'),
-              hh=String(Math.floor(d%86400/3600)).padStart(2,'0'),
-              mm=String(Math.floor(d%3600/60)).padStart(2,'0'),
-              ss=String(Math.floor(d%60)).padStart(2,'0');
-        document.getElementById('v'+cfg.id).childNodes.forEach((n,i)=>{n.innerText=[dd,hh,mm,ss][i];});
-        requestAnimationFrame(upd);
-      }
-      upd();
-    }
-    coords.forEach(createTimer);
-    window.addEventListener('resize',()=>location.reload());
-  </script>
+<div id="app"></div>
+<script>
+const coords=[{id:'A',x:218,y:261},{id:'B',x:669,y:261},{id:'C',x:1105,y:261},
+              {id:'D',x:218,y:725},{id:'E',x:669,y:725},{id:'F',x:1105,y:725}];
+coords.forEach(c=>{
+  const t=document.createElement('div'); t.className='timer';
+  const savedPos=localStorage.getItem('pos'+c.id);
+  if(savedPos){
+    const p=JSON.parse(savedPos);
+    t.style.left=(p.x/window.innerWidth*100)+'%';
+    t.style.top=(p.y/window.innerHeight*100)+'%';
+  } else {
+    t.style.left=(c.x/window.innerWidth*100)+'%';
+    t.style.top=(c.y/window.innerHeight*100)+'%';
+  }
+  const title=document.createElement('input');
+  title.type='text'; title.value=localStorage.getItem('title'+c.id)||('Barrel '+c.id);
+  title.onchange=()=>localStorage.setItem('title'+c.id,title.value);
+  const time=document.createElement('input');
+  time.type='datetime-local';
+  const st=localStorage.getItem('start'+c.id)||new Date().toISOString();
+  time.value=st.slice(0,16);
+  time.onchange=()=>localStorage.setItem('start'+c.id,new Date(time.value).toISOString());
+  const labels=document.createElement('div'); labels.className='labels';
+  ['Days','Hours','Min','Sec'].forEach(l=>{const d=document.createElement('div');d.innerText=l;labels.appendChild(d);});
+  const vals=document.createElement('div'); vals.className='values'; vals.id='v'+c.id;
+  ['000','00','00','00'].forEach(v=>{const d=document.createElement('div');d.innerText=v;vals.appendChild(d);});
+  t.append(title,time,labels,vals);
+  // drag
+  let dx,dy;
+  t.addEventListener('mousedown',e=>{
+    if(localStorage.getItem('lock'+c.id)==='1')return;
+    const r=t.getBoundingClientRect();
+    dx=e.clientX-r.left; dy=e.clientY-r.top;
+    const move=(e)=>{t.style.left=( (e.clientX-dx)/window.innerWidth*100)+'%';
+                    t.style.top=( (e.clientY-dy)/window.innerHeight*100)+'%';};
+    const up=()=>{
+      document.removeEventListener('mousemove',move);
+      document.removeEventListener('mouseup',up);
+      const r2=t.getBoundingClientRect();
+      localStorage.setItem('pos'+c.id,JSON.stringify({x:r2.left,y:r2.top}));
+    };
+    document.addEventListener('mousemove',move);
+    document.addEventListener('mouseup',up);
+  });
+  // lock toggle
+  const btn=document.createElement('button');
+  btn.innerText=localStorage.getItem('lock'+c.id)==='1'?'🔒':'🔓';
+  btn.onclick=()=>{
+    const is=localStorage.getItem('lock'+c.id)==='1';
+    localStorage.setItem('lock'+c.id,is?'0':'1');
+    btn.innerText=is?'🔓':'🔒';
+  };
+  t.appendChild(btn);
+  document.getElementById('app').appendChild(t);
+  // timer update
+  function upd(){
+    const now=new Date();
+    const st2=localStorage.getItem('start'+c.id)||now.toISOString();
+    const diff=Math.floor((now-new Date(st2))/1000);
+    const d=Math.floor(diff/86400),h=Math.floor(diff%86400/3600),
+          m=Math.floor(diff%3600/60),s=diff%60;
+    const arr=[String(d).padStart(3,'0'),String(h).padStart(2,'0'),
+               String(m).padStart(2,'0'),String(s).padStart(2,'0')];
+    const container=document.getElementById('v'+c.id);
+    container.childNodes.forEach((n,i)=>n.innerText=arr[i]);
+    requestAnimationFrame(upd);
+  }
+  upd();
+});
+window.addEventListener('resize',()=>location.reload());
+</script>
 </body>
 </html>
