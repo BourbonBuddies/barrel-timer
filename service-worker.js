@@ -1,7 +1,6 @@
-
-self.addEventListener('install', (event) => {
+self.addEventListener('install', function(event) {
   event.waitUntil(
-    caches.open('barrel-timer-cache').then((cache) => {
+    caches.open('barrel-timer-cache').then(function(cache) {
       return cache.addAll([
         './index.html',
         './manifest.json',
@@ -11,10 +10,9 @@ self.addEventListener('install', (event) => {
     })
   );
 });
-
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', function(event) {
   event.respondWith(
-    caches.match(event.request).then((response) => {
+    caches.match(event.request).then(function(response) {
       return response || fetch(event.request);
     })
   );
