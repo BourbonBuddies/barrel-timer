@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum‑scale=1.0, user-scalable=no">
+  <title>Barrel Timer</title>
+  <style>
+    body, html { margin:0; padding:0; height:100%; }
+    body {
+      background: url('barrel_background.png') no-repeat center center fixed;
+      background-size: cover;
+      font-family: sans-serif;
+      color: #f2e6d8;
+      overflow: hidden;
+    }
+    .timer {
+      position:absolute;
+      transform: translate(-50%,-50%);
+      text-align:center;
+      cursor:move;
+    }
+    .timer input[type="text"], .timer input[type="datetime-local"] {
+      background:none; border:none; color:#f2e6d8; text-align:center;
+      display:block; margin:4px auto;
+    }
+    .labels, .values { display:flex; justify-content:center; gap:8px; }
+    .labels div { font-size:12px; }
+    .values div { font-family:monospace; font-size:18px; }
+    .lock-btn {
+      background:transparent; border:none; color:#f2e6d8; font-size:18px;
+      display:block; margin:4px auto; cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    const coords = [
+      {id:'A', x:218, y:261},
+      {id:'B', x:669, y:261},
+      {id:'C', x:1105, y:261},
+      {id:'D', x:218, y:725},
+      {id:'E', x:669, y:725},
+      {id:'F', x:1105, y:725},
+    ];
+    function createTimer(cfg){
+      const t = document.createElement('div');
+      t.className='timer'; t.id='t'+cfg.id;
+      const savedPos=JSON.parse(localStorage.getItem('pos'+cfg.id)||'null');
+      const left=(savedPos?savedPos.x:cfg.x)/window.innerWidth*100;
+      const top=(savedPos?savedPos.y:cfg.y:cfg.y)/window.innerHeight*100;
+      t.style.left=left+'%'; t.style.top=top+'%';
+      const title=localStorage.getItem('title'+cfg.id)||'Barrel '+cfg.id;
+      const stime=new Date(localStorage.getItem('start'+cfg.id)||Date.now());
+      const ti=document.createElement('input');
+      ti.type='text'; ti.value=title;
+      ti.onchange=()=>localStorage.setItem('title'+cfg.id, ti.value);
+      const si=document.createElement('input');
+      si.type='datetime-local';
+      si.value=stime.toISOString().slice(0,16);
+      si.onchange=()=>localStorage.setItem('start'+cfg.id, new Date(si.value).toISOString());
+      const labels= document.createElement('div');
+      labels.className='labels';
+      ['Days','Hours','Min','Sec'].forEach(l=>{const d=document.createElement('div'); d.innerText=l; labels.appendChild(d);});
+      const values=document.createElement('div');
+      values.className='values'; values.id='v'+cfg.id;
+      ['000','00','00','00'].forEach(v=>{const d=document.createElement('div'); d.innerText=v; values.appendChild(d);});
+      const btn=document.createElement('button');
+      btn.className='lock-btn';
+      const locked=localStorage.getItem('lock'+cfg.id)==='1';
+      btn.innerText=locked?'🔒':'🔓';
+      btn.onclick=()=>{
+        const nl=!locked;
+        localStorage.setItem('lock'+cfg.id, nl?1:0);
+        btn.innerText=nl?'🔒':'🔓';
+      };
+      [ti,si,labels,values,btn].forEach(el=>t.appendChild(el));
+      let dx,dy;
+      function start(e){
+        if(localStorage.getItem('lock'+cfg.id)==='1') return;
+        e=e.touches?e.touches[0]:e;
+        const r=t.getBoundingClientRect();
+        dx=e.clientX-r.left; dy=e.clientY-r.top;
+        document.addEventListener('mousemove',move);
+        document.addEventListener('mouseup',end);
+        document.addEventListener('touchmove',move);
+        document.addEventListener('touchend',end);
+      }
+      function move(e){
+        e=e.touches?e.touches[0]:e;
+        const x=e.clientX-dx, y=e.clientY-dy;
+        t.style.left=(x/window.innerWidth*100)+'%';
+        t.style.top=(y/window.innerHeight*100)+'%';
+      }
+      function end(){
+        document.removeEventListener('mousemove',move);
+        document.removeEventListener('mouseup',end);
+        document.removeEventListener('touchmove',move);
+        document.removeEventListener('touchend',end);
+        const r=t.getBoundingClientRect();
+        localStorage.setItem('pos'+cfg.id, JSON.stringify({x:r.left,y:r.top}));
+      }
+      t.addEventListener('mousedown',start);
+      t.addEventListener('touchstart',start);
+      document.getElementById('app').appendChild(t);
+      function upd(){
+        const now=new Date(), s=localStorage.getItem('start'+cfg.id);
+        const d=(now-new Date(s))/1000;
+        const dd=String(Math.floor(d/86400)).padStart(3,'0'),
+              hh=String(Math.floor(d%86400/3600)).padStart(2,'0'),
+              mm=String(Math.floor(d%3600/60)).padStart(2,'0'),
+              ss=String(Math.floor(d%60)).padStart(2,'0');
+        document.getElementById('v'+cfg.id).childNodes.forEach((n,i)=>{n.innerText=[dd,hh,mm,ss][i];});
+        requestAnimationFrame(upd);
+      }
+      upd();
+    }
+    coords.forEach(createTimer);
+    window.addEventListener('resize',()=>location.reload());
+  </script>
+</body>
+</html>
