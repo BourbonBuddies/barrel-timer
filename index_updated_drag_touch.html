@@ -1,0 +1,160 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Barrel Timer</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: url('barrel_background.png') no-repeat center center fixed;
+      background-size: cover;
+      font-family: sans-serif;
+      color: #f2e6d8;
+    }
+    .timer-container {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: #f2e6d8;
+      touch-action: none;
+    }
+    .label-row, .digits-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    .label-row { font-size: 12px; }
+    .digits-row { font-size: 20px; font-weight: bold; }
+    .timer-title {
+      background: transparent;
+      border: none;
+      text-align: center;
+      color: #f2e6d8;
+      font-size: 21px;
+      width: 14ch;
+    }
+    .start-time {
+      background: transparent;
+      border: none;
+      text-align: center;
+      color: #f2e6d8;
+      font-size: 14px;
+    }
+    .timer-title::placeholder, .start-time::placeholder {
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <div id="timers"></div>
+
+  <script>
+    const positions = [
+      { id: 'A', left: 218, top: 261 },
+      { id: 'B', left: 669, top: 261 },
+      { id: 'C', left: 1105, top: 261 },
+      { id: 'D', left: 218, top: 725 },
+      { id: 'E', left: 669, top: 725 },
+      { id: 'F', left: 1105, top: 725 }
+    ];
+
+    function createTimer(id, left, top, title, startTime) {
+      const container = document.createElement("div");
+      container.className = "timer-container";
+      container.id = "timer-" + id;
+      container.style.left = left + "px";
+      container.style.top = top + "px";
+
+      const titleInput = document.createElement("input");
+      titleInput.className = "timer-title";
+      titleInput.placeholder = "Barrel " + id;
+      titleInput.value = title || "";
+      titleInput.onchange = () => {
+        localStorage.setItem("title-" + id, titleInput.value);
+      };
+
+      const startInput = document.createElement("input");
+      startInput.className = "start-time";
+      startInput.type = "datetime-local";
+      startInput.value = startTime.toISOString().slice(0, 16);
+      startInput.onchange = () => {
+        localStorage.setItem("start-" + id, new Date(startInput.value).toISOString());
+        location.reload();
+      };
+
+      const labels = document.createElement("div");
+      labels.className = "label-row";
+      labels.innerHTML = "<div>Days</div><div>Hours</div><div>Min</div><div>Sec</div>";
+
+      const digits = document.createElement("div");
+      digits.className = "digits-row";
+      digits.id = "digits-" + id;
+      digits.innerHTML = "<div>000</div><div>00</div><div>00</div><div>00</div>";
+
+      container.appendChild(titleInput);
+      container.appendChild(startInput);
+      container.appendChild(labels);
+      container.appendChild(digits);
+      document.getElementById("timers").appendChild(container);
+
+      function update() {
+        const now = new Date();
+        const diff = Math.floor((now - startTime) / 1000);
+        const days = String(Math.floor(diff / 86400)).padStart(3, '0');
+        const hours = String(Math.floor((diff % 86400) / 3600)).padStart(2, '0');
+        const minutes = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+        const seconds = String(diff % 60).padStart(2, '0');
+        digits.innerHTML = `<div>${days}</div><div>${hours}</div><div>${minutes}</div><div>${seconds}</div>`;
+        requestAnimationFrame(update);
+      }
+      update();
+
+      let offsetX = 0, offsetY = 0;
+
+      const dragStart = (e) => {
+        const rect = container.getBoundingClientRect();
+        offsetX = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+        offsetY = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+        document.addEventListener(e.type === 'touchstart' ? 'touchmove' : 'mousemove', dragMove);
+        document.addEventListener(e.type === 'touchstart' ? 'touchend' : 'mouseup', dragEnd);
+      };
+
+      const dragMove = (e) => {
+        const x = (e.touches ? e.touches[0].pageX : e.pageX) - offsetX;
+        const y = (e.touches ? e.touches[0].pageY : e.pageY) - offsetY;
+        container.style.left = x + 'px';
+        container.style.top = y + 'px';
+      };
+
+      const dragEnd = (e) => {
+        document.removeEventListener(e.type === 'touchend' ? 'touchmove' : 'mousemove', dragMove);
+        document.removeEventListener(e.type === 'touchend' ? 'touchend' : 'mouseup', dragEnd);
+        localStorage.setItem("pos-" + id, JSON.stringify({ left: container.offsetLeft, top: container.offsetTop }));
+      };
+
+      container.addEventListener("mousedown", dragStart);
+      container.addEventListener("touchstart", dragStart);
+    }
+
+    window.onload = () => {
+      const now = new Date();
+      positions.forEach((pos, i) => {
+        const storedStart = localStorage.getItem("start-" + pos.id);
+        const storedTitle = localStorage.getItem("title-" + pos.id);
+        const storedPos = JSON.parse(localStorage.getItem("pos-" + pos.id)) || { left: pos.left, top: pos.top };
+        const startTime = storedStart ? new Date(storedStart) : new Date(now - i * 10000000);
+        localStorage.setItem("start-" + pos.id, startTime.toISOString());
+        createTimer(pos.id, storedPos.left, storedPos.top, storedTitle, startTime);
+      });
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js');
+      }
+    }
+  </script>
+</body>
+</html>
