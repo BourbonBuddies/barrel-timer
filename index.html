@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Barrel Timer</title>
   <link rel="manifest" href="manifest.json">
   <style>
@@ -16,7 +16,7 @@
       color: #f2e6d8;
     }
     .timer-container {
-      position: absolute;
+      position: absolute; max-width: 100%;
       transform: translate(-50%, -50%);
       text-align: center;
       color: #f2e6d8;
@@ -66,8 +66,8 @@
       const container = document.createElement("div");
       container.className = "timer-container";
       container.id = "timer-" + id;
-      container.style.left = left + "px";
-      container.style.top = top + "px";
+      container.style.left = `calc(${(left / 1400 * 100).toFixed(2)}%)`;
+      container.style.top = `calc(${(top / 900 * 100).toFixed(2)}%)`;
 
       const titleInput = document.createElement("input");
       titleInput.className = "timer-title";
@@ -96,7 +96,9 @@
       digits.innerHTML = "<div>000</div><div>00</div><div>00</div><div>00</div>";
 
       container.appendChild(titleInput);
+      container.appendChild(document.createElement("br"));
       container.appendChild(startInput);
+      container.appendChild(document.createElement("br"));
       container.appendChild(labels);
       container.appendChild(digits);
       document.getElementById("timers").appendChild(container);
@@ -136,8 +138,8 @@
         localStorage.setItem("pos-" + id, JSON.stringify({ left: container.offsetLeft, top: container.offsetTop }));
       };
 
-      container.addEventListener("mousedown", dragStart);
-      container.addEventListener("touchstart", dragStart);
+      if (!localStorage.getItem("pos-" + id)) container.addEventListener("mousedown", dragStart);
+      if (!localStorage.getItem("pos-" + id)) container.addEventListener("touchstart", dragStart);
     }
 
     window.onload = () => {
