@@ -7,17 +7,24 @@
   <title>Barrel Timer</title>
   <link rel="manifest" href="manifest.json">
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100vw;
-      height: 100vh;
-      font-family: sans-serif;
-      background: #3e2c1c url('barrel_background.png') no-repeat center center;
-      background-size: contain;
-      overflow: hidden;
-      color: #f2e6d8;
-    }
+    html {
+  background-color: #3e2c1c;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  font-family: sans-serif;
+  background-color: #3e2c1c;
+  background-image: url('barrel_background.png');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: contain;
+  overflow: hidden;
+  color: #f2e6d8;
+}
     #mainTitle {
       text-align: center;
       color: #f2e6d8;
@@ -121,14 +128,9 @@ function createTimer(id, left = 50, top = 50) {
 
   const datetime = document.createElement('input');
   datetime.type = 'datetime-local';
-  function getLocalDateTimeString() {
-  const now = new Date();
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-  return now.toISOString().slice(0,16);
-}
-const start = localStorage.getItem('start' + id) || getLocalDateTimeString();
-datetime.value = start;
-  datetime.onchange = () => localStorage.setItem('start' + id, datetime.value);
+  const start = localStorage.getItem('start' + id) || new Date().toISOString();
+  datetime.value = start.slice(0, 16);
+  datetime.onchange = () => localStorage.setItem('start' + id, new Date(datetime.value).toISOString());
 
   const labels = document.createElement('div');
   labels.className = 'labels';
