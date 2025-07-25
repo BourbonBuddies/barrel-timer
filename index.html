@@ -30,7 +30,7 @@
       text-align: center;
       display: block;
       margin: 2px auto;
-      font-size: 20px;
+      font-size: 16px;
     }
     .labels, .values {
       display: flex;
@@ -48,14 +48,19 @@
       background: none;
       border: 1px solid #f2e6d8;
       color: #f2e6d8;
-      font-size: 20px;
-      padding: 8px 20px;
+      font-size: 16px;
+      padding: 4px 12px;
       margin: 4px;
       cursor: pointer;
       display: block;
     }
     #mainTitle { text-align: center; color: #f2e6d8; margin: 0.3em 0; font-size: 28px; font-weight: bold; }
-    #addButton { bottom: 20px; top: auto; position: absolute; background: black;
+    #addButton {
+      position: absolute;
+      bottom: 20px;
+      top: auto;
+      left: 50%;
+      transform: translateX(-50%); background: black;
       position: absolute;
       top: 10px;
       left: 50%;
