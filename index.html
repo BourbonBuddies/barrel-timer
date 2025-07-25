@@ -39,6 +39,11 @@
       display: block;
       margin: 2px auto;
       font-size: 16px;
+    
+  font-weight: bold;}
+
+    input.title {
+      font-weight: bold;
     }
     .labels, .values {
       display: flex;
@@ -115,7 +120,7 @@ function createTimer(id, left = 50, top = 50) {
 
   const title = document.createElement('input');
   title.type = 'text';
-  title.maxLength = 14;
+  title.maxLength = 20;
   title.value = localStorage.getItem('title' + id) || 'Barrel ' + id;
   title.onchange = () => localStorage.setItem('title' + id, title.value);
 
