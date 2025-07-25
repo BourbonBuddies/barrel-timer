@@ -2,18 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, orientation=landscape">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
   <title>Barrel Timer</title>
   <link rel="manifest" href="manifest.json">
   <style>
     html, body {
       margin: 0;
       padding: 0;
-      width: 100%;
-      height: 100%;
+      width: 100vw;
+      height: 100vh;
       font-family: sans-serif;
-      background: url('barrel_background.png') no-repeat center center fixed;
-      background-size: cover;
+      background: url('barrel_background.png') no-repeat center center;
+      background-size: contain;
       overflow: hidden;
       color: #f2e6d8;
     }
@@ -79,97 +79,101 @@ const coords = [
   {id:'D',x:400,y:600},{id:'E',x:700,y:600},{id:'F',x:1000,y:600}
 ];
 
-coords.forEach(cfg => {
-  const t = document.createElement('div');
-  t.className = 'timer'; t.id = 't' + cfg.id;
-  const sp = JSON.parse(localStorage.getItem('pos' + cfg.id) || 'null');
-  const left = (sp ? sp.x : cfg.x) / window.innerWidth * 100;
-  const top = (sp ? sp.y : cfg.y) / window.innerHeight * 100;
-  t.style.left = left + '%';
-  t.style.top = top + '%';
+function placeTimers() {
+  document.getElementById('app').innerHTML = '';
+  coords.forEach(cfg => {
+    const t = document.createElement('div');
+    t.className = 'timer'; t.id = 't' + cfg.id;
+    const sp = JSON.parse(localStorage.getItem('pos' + cfg.id) || 'null');
+    const left = (sp ? sp.x : cfg.x) / window.innerWidth * 100;
+    const top = (sp ? sp.y : cfg.y) / window.innerHeight * 100;
+    t.style.left = left + '%';
+    t.style.top = top + '%';
 
-  const title = document.createElement('input');
-  title.type = 'text';
-  title.maxLength = 14;
-  title.value = localStorage.getItem('title' + cfg.id) || 'Barrel ' + cfg.id;
-  title.onchange = () => localStorage.setItem('title' + cfg.id, title.value);
+    const title = document.createElement('input');
+    title.type = 'text';
+    title.maxLength = 14;
+    title.value = localStorage.getItem('title' + cfg.id) || 'Barrel ' + cfg.id;
+    title.onchange = () => localStorage.setItem('title' + cfg.id, title.value);
 
-  const datetime = document.createElement('input');
-  datetime.type = 'datetime-local';
-  const start = localStorage.getItem('start' + cfg.id) || new Date().toISOString();
-  datetime.value = start.slice(0, 16);
-  datetime.onchange = () => localStorage.setItem('start' + cfg.id, new Date(datetime.value).toISOString());
+    const datetime = document.createElement('input');
+    datetime.type = 'datetime-local';
+    const start = localStorage.getItem('start' + cfg.id) || new Date().toISOString();
+    datetime.value = start.slice(0, 16);
+    datetime.onchange = () => localStorage.setItem('start' + cfg.id, new Date(datetime.value).toISOString());
 
-  const labels = document.createElement('div');
-  labels.className = 'labels';
-  ['Days','Hours','Min','Sec'].forEach(label => {
-    const d = document.createElement('div');
-    d.innerText = label;
-    labels.appendChild(d);
-  });
+    const labels = document.createElement('div');
+    labels.className = 'labels';
+    ['Days','Hours','Min','Sec'].forEach(label => {
+      const d = document.createElement('div');
+      d.innerText = label;
+      labels.appendChild(d);
+    });
 
-  const values = document.createElement('div');
-  values.className = 'values';
-  values.id = 'v' + cfg.id;
-  ['000','00','00','00'].forEach(val => {
-    const d = document.createElement('div');
-    d.innerText = val;
-    values.appendChild(d);
-  });
+    const values = document.createElement('div');
+    values.className = 'values';
+    values.id = 'v' + cfg.id;
+    ['000','00','00','00'].forEach(val => {
+      const d = document.createElement('div');
+      d.innerText = val;
+      values.appendChild(d);
+    });
 
-  const lock = document.createElement('button');
-  let locked = localStorage.getItem('lock' + cfg.id) === '1';
-  lock.innerText = locked ? '🔒' : '🔓';
-  lock.onclick = () => {
-    locked = !locked;
-    localStorage.setItem('lock' + cfg.id, locked ? '1' : '0');
+    const lock = document.createElement('button');
+    let locked = localStorage.getItem('lock' + cfg.id) === '1';
     lock.innerText = locked ? '🔒' : '🔓';
-  };
+    lock.onclick = () => {
+      locked = !locked;
+      localStorage.setItem('lock' + cfg.id, locked ? '1' : '0');
+      lock.innerText = locked ? '🔒' : '🔓';
+    };
 
-  [title, datetime, labels, values, lock].forEach(el => t.appendChild(el));
-  document.getElementById('app').appendChild(t);
+    [title, datetime, labels, values, lock].forEach(el => t.appendChild(el));
+    document.getElementById('app').appendChild(t);
 
-  let dx = 0, dy = 0;
+    let dx = 0, dy = 0;
 
-  t.addEventListener('pointerdown', e => {
-    if (localStorage.getItem('lock' + cfg.id) === '1') return;
-    const rect = t.getBoundingClientRect();
-    dx = e.clientX - rect.left;
-    dy = e.clientY - rect.top;
-    t.setPointerCapture(e.pointerId);
+    t.addEventListener('pointerdown', e => {
+      if (localStorage.getItem('lock' + cfg.id) === '1') return;
+      const rect = t.getBoundingClientRect();
+      dx = e.clientX - rect.left;
+      dy = e.clientY - rect.top;
+      t.setPointerCapture(e.pointerId);
+    });
+
+    t.addEventListener('pointermove', e => {
+      if (!t.hasPointerCapture(e.pointerId)) return;
+      if (localStorage.getItem('lock' + cfg.id) === '1') return;
+      const x = e.clientX - dx;
+      const y = e.clientY - dy;
+      t.style.left = (x / window.innerWidth * 100) + '%';
+      t.style.top = (y / window.innerHeight * 100) + '%';
+    });
+
+    t.addEventListener('pointerup', e => {
+      if (localStorage.getItem('lock' + cfg.id) === '1') return;
+      t.releasePointerCapture(e.pointerId);
+      const rect2 = t.getBoundingClientRect();
+      localStorage.setItem('pos' + cfg.id, JSON.stringify({x: rect2.left, y: rect2.top}));
+    });
+
+    (function update(){
+      const now = new Date();
+      const s = localStorage.getItem('start' + cfg.id) || now.toISOString();
+      const diff = Math.floor((now - new Date(s)) / 1000);
+      const d = String(Math.floor(diff / 86400)).padStart(3, '0'),
+            h = String(Math.floor(diff % 86400 / 3600)).padStart(2, '0'),
+            m = String(Math.floor(diff % 3600 / 60)).padStart(2, '0'),
+            s2 = String(diff % 60).padStart(2, '0');
+      const valArr = [d, h, m, s2];
+      document.getElementById('v' + cfg.id).childNodes.forEach((node, i) => node.innerText = valArr[i]);
+      requestAnimationFrame(update);
+    })();
   });
+}
 
-  t.addEventListener('pointermove', e => {
-    if (!t.hasPointerCapture(e.pointerId)) return;
-    if (localStorage.getItem('lock' + cfg.id) === '1') return;
-    const x = e.clientX - dx;
-    const y = e.clientY - dy;
-    t.style.left = (x / window.innerWidth * 100) + '%';
-    t.style.top = (y / window.innerHeight * 100) + '%';
-  });
-
-  t.addEventListener('pointerup', e => {
-    if (localStorage.getItem('lock' + cfg.id) === '1') return;
-    t.releasePointerCapture(e.pointerId);
-    const rect2 = t.getBoundingClientRect();
-    localStorage.setItem('pos' + cfg.id, JSON.stringify({x: rect2.left, y: rect2.top}));
-  });
-
-  (function update(){
-    const now = new Date();
-    const s = localStorage.getItem('start' + cfg.id) || now.toISOString();
-    const diff = Math.floor((now - new Date(s)) / 1000);
-    const d = String(Math.floor(diff / 86400)).padStart(3, '0'),
-          h = String(Math.floor(diff % 86400 / 3600)).padStart(2, '0'),
-          m = String(Math.floor(diff % 3600 / 60)).padStart(2, '0'),
-          s2 = String(diff % 60).padStart(2, '0');
-    const valArr = [d, h, m, s2];
-    document.getElementById('v' + cfg.id).childNodes.forEach((node, i) => node.innerText = valArr[i]);
-    requestAnimationFrame(update);
-  })();
-});
-
-window.addEventListener('resize', () => location.reload());
+placeTimers();
+window.addEventListener('resize', placeTimers);
 </script>
 </body>
 </html>
