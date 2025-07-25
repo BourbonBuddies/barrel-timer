@@ -46,12 +46,20 @@
     }
     button {
       background: none;
-      border: none;
+      border: 1px solid #f2e6d8;
       color: #f2e6d8;
-      font-size: 20px;
-      margin: 2px auto;
+      font-size: 16px;
+      padding: 4px 12px;
+      margin: 4px;
       cursor: pointer;
       display: block;
+    }
+    #addButton {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1001;
     }
     @media screen and (orientation:portrait) {
       body::before {
@@ -72,112 +80,124 @@
   </style>
 </head>
 <body>
+<button id="addButton">+ Add Timer</button>
 <div id="app"></div>
 <script>
-const coords = [
-  {id:'A',left:20,top:30},{id:'B',left:50,top:30},{id:'C',left:80,top:30},
-  {id:'D',left:20,top:70},{id:'E',left:50,top:70},{id:'F',left:80,top:70}
-];
+const MAX_TIMERS = 6;
+let currentCount = parseInt(localStorage.getItem('timerCount') || '0');
+const usedIDs = ['A','B','C','D','E','F'];
 
-function placeTimers() {
-  document.getElementById('app').innerHTML = '';
-  coords.forEach(cfg => {
-    const t = document.createElement('div');
-    t.className = 'timer'; t.id = 't' + cfg.id;
+function createTimer(id, left = 50, top = 50) {
+  const t = document.createElement('div');
+  t.className = 'timer';
+  t.id = 't' + id;
 
-    const saved = JSON.parse(localStorage.getItem('pos' + cfg.id));
-    const left = saved ? saved.left : cfg.left;
-    const top = saved ? saved.top : cfg.top;
+  const saved = JSON.parse(localStorage.getItem('pos' + id));
+  if (saved) { left = saved.left; top = saved.top; }
+
+  t.style.left = left + '%';
+  t.style.top = top + '%';
+
+  const title = document.createElement('input');
+  title.type = 'text';
+  title.maxLength = 14;
+  title.value = localStorage.getItem('title' + id) || 'Barrel ' + id;
+  title.onchange = () => localStorage.setItem('title' + id, title.value);
+
+  const datetime = document.createElement('input');
+  datetime.type = 'datetime-local';
+  const start = localStorage.getItem('start' + id) || new Date().toISOString();
+  datetime.value = start.slice(0, 16);
+  datetime.onchange = () => localStorage.setItem('start' + id, new Date(datetime.value).toISOString());
+
+  const labels = document.createElement('div');
+  labels.className = 'labels';
+  ['Days','Hours','Min','Sec'].forEach(label => {
+    const d = document.createElement('div');
+    d.innerText = label;
+    labels.appendChild(d);
+  });
+
+  const values = document.createElement('div');
+  values.className = 'values';
+  values.id = 'v' + id;
+  ['000','00','00','00'].forEach(val => {
+    const d = document.createElement('div');
+    d.innerText = val;
+    values.appendChild(d);
+  });
+
+  const lock = document.createElement('button');
+  let locked = localStorage.getItem('lock' + id) === '1';
+  lock.innerText = locked ? '🔒' : '🔓';
+  lock.onclick = () => {
+    locked = !locked;
+    localStorage.setItem('lock' + id, locked ? '1' : '0');
+    lock.innerText = locked ? '🔒' : '🔓';
+  };
+
+  [title, datetime, labels, values, lock].forEach(el => t.appendChild(el));
+  document.getElementById('app').appendChild(t);
+
+  let offsetX = 0, offsetY = 0;
+
+  t.addEventListener('pointerdown', e => {
+    if (locked) return;
+    const rect = t.getBoundingClientRect();
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+    t.setPointerCapture(e.pointerId);
+  });
+
+  t.addEventListener('pointermove', e => {
+    if (!t.hasPointerCapture(e.pointerId) || locked) return;
+    const left = (e.clientX - offsetX) / window.innerWidth * 100;
+    const top = (e.clientY - offsetY) / window.innerHeight * 100;
     t.style.left = left + '%';
     t.style.top = top + '%';
-
-    const title = document.createElement('input');
-    title.type = 'text';
-    title.maxLength = 14;
-    title.value = localStorage.getItem('title' + cfg.id) || 'Barrel ' + cfg.id;
-    title.onchange = () => localStorage.setItem('title' + cfg.id, title.value);
-
-    const datetime = document.createElement('input');
-    datetime.type = 'datetime-local';
-    const start = localStorage.getItem('start' + cfg.id) || new Date().toISOString();
-    datetime.value = start.slice(0, 16);
-    datetime.onchange = () => localStorage.setItem('start' + cfg.id, new Date(datetime.value).toISOString());
-
-    const labels = document.createElement('div');
-    labels.className = 'labels';
-    ['Days','Hours','Min','Sec'].forEach(label => {
-      const d = document.createElement('div');
-      d.innerText = label;
-      labels.appendChild(d);
-    });
-
-    const values = document.createElement('div');
-    values.className = 'values';
-    values.id = 'v' + cfg.id;
-    ['000','00','00','00'].forEach(val => {
-      const d = document.createElement('div');
-      d.innerText = val;
-      values.appendChild(d);
-    });
-
-    const lock = document.createElement('button');
-    let locked = localStorage.getItem('lock' + cfg.id) === '1';
-    lock.innerText = locked ? '🔒' : '🔓';
-    lock.onclick = () => {
-      locked = !locked;
-      localStorage.setItem('lock' + cfg.id, locked ? '1' : '0');
-      lock.innerText = locked ? '🔒' : '🔓';
-    };
-
-    [title, datetime, labels, values, lock].forEach(el => t.appendChild(el));
-    document.getElementById('app').appendChild(t);
-
-    let offsetX = 0, offsetY = 0;
-
-    t.addEventListener('pointerdown', e => {
-      if (localStorage.getItem('lock' + cfg.id) === '1') return;
-      const rect = t.getBoundingClientRect();
-      offsetX = e.clientX - rect.left;
-      offsetY = e.clientY - rect.top;
-      t.setPointerCapture(e.pointerId);
-    });
-
-    t.addEventListener('pointermove', e => {
-      if (!t.hasPointerCapture(e.pointerId)) return;
-      if (localStorage.getItem('lock' + cfg.id) === '1') return;
-      const left = (e.clientX - offsetX) / window.innerWidth * 100;
-      const top = (e.clientY - offsetY) / window.innerHeight * 100;
-      t.style.left = left + '%';
-      t.style.top = top + '%';
-    });
-
-    t.addEventListener('pointerup', e => {
-      if (localStorage.getItem('lock' + cfg.id) === '1') return;
-      t.releasePointerCapture(e.pointerId);
-      const computedLeft = parseFloat(t.style.left);
-      const computedTop = parseFloat(t.style.top);
-      localStorage.setItem('pos' + cfg.id, JSON.stringify({left: computedLeft, top: computedTop}));
-    });
-
-    (function update(){
-      const now = new Date();
-      const s = localStorage.getItem('start' + cfg.id) || now.toISOString();
-      const diff = Math.floor((now - new Date(s)) / 1000);
-      const d = String(Math.floor(diff / 86400)).padStart(3, '0'),
-            h = String(Math.floor(diff % 86400 / 3600)).padStart(2, '0'),
-            m = String(Math.floor(diff % 3600 / 60)).padStart(2, '0'),
-            s2 = String(diff % 60).padStart(2, '0');
-      const valArr = [d, h, m, s2];
-      document.getElementById('v' + cfg.id).childNodes.forEach((node, i) => node.innerText = valArr[i]);
-      requestAnimationFrame(update);
-    })();
   });
+
+  t.addEventListener('pointerup', e => {
+    if (locked) return;
+    t.releasePointerCapture(e.pointerId);
+    const computedLeft = parseFloat(t.style.left);
+    const computedTop = parseFloat(t.style.top);
+    localStorage.setItem('pos' + id, JSON.stringify({left: computedLeft, top: computedTop}));
+  });
+
+  (function update(){
+    const now = new Date();
+    const s = localStorage.getItem('start' + id) || now.toISOString();
+    const diff = Math.floor((now - new Date(s)) / 1000);
+    const d = String(Math.floor(diff / 86400)).padStart(3, '0'),
+          h = String(Math.floor(diff % 86400 / 3600)).padStart(2, '0'),
+          m = String(Math.floor(diff % 3600 / 60)).padStart(2, '0'),
+          s2 = String(diff % 60).padStart(2, '0');
+    const valArr = [d, h, m, s2];
+    document.getElementById('v' + id).childNodes.forEach((node, i) => node.innerText = valArr[i]);
+    requestAnimationFrame(update);
+  })();
 }
 
-placeTimers();
+function loadTimers() {
+  for (let i = 0; i < currentCount; i++) {
+    createTimer(usedIDs[i]);
+  }
+}
+
+document.getElementById('addButton').addEventListener('click', () => {
+  if (currentCount >= MAX_TIMERS) return alert("Maximum 6 timers allowed.");
+  createTimer(usedIDs[currentCount]);
+  currentCount++;
+  localStorage.setItem('timerCount', currentCount);
+});
+
+loadTimers();
+
 window.addEventListener('orientationchange', () => {
   setTimeout(() => {
-    placeTimers(); // Recalculate positions with correct % values
+    document.getElementById('app').innerHTML = '';
+    loadTimers();
   }, 300);
 });
 </script>
