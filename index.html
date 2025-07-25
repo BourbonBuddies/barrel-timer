@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,6 +17,13 @@
       background-size: contain;
       overflow: hidden;
       color: #f2e6d8;
+    }
+    #mainTitle {
+      text-align: center;
+      color: #f2e6d8;
+      margin: 0.3em 0;
+      font-size: 28px;
+      font-weight: bold;
     }
     .timer {
       position: absolute;
@@ -54,7 +62,6 @@
       cursor: pointer;
       display: block;
     }
-    #mainTitle { text-align: center; color: #f2e6d8; margin: 0.3em 0; font-size: 28px; font-weight: bold; }
     #addButton {
       position: absolute;
       bottom: 20px;
@@ -114,9 +121,14 @@ function createTimer(id, left = 50, top = 50) {
 
   const datetime = document.createElement('input');
   datetime.type = 'datetime-local';
-  const start = localStorage.getItem('start' + id) || new Date().toISOString();
-  datetime.value = start.slice(0, 16);
-  datetime.onchange = () => localStorage.setItem('start' + id, new Date(datetime.value).toISOString());
+  function getLocalDateTimeString() {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  return now.toISOString().slice(0,16);
+}
+const start = localStorage.getItem('start' + id) || getLocalDateTimeString();
+datetime.value = start;
+  datetime.onchange = () => localStorage.setItem('start' + id, datetime.value);
 
   const labels = document.createElement('div');
   labels.className = 'labels';
