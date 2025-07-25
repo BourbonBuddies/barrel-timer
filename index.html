@@ -75,8 +75,8 @@
 <div id="app"></div>
 <script>
 const coords = [
-  {id:'A',x:400,y:250},{id:'B',x:700,y:250},{id:'C',x:1000,y:250},
-  {id:'D',x:400,y:600},{id:'E',x:700,y:600},{id:'F',x:1000,y:600}
+  {id:'A',left:20,top:30},{id:'B',left:50,top:30},{id:'C',left:80,top:30},
+  {id:'D',left:20,top:70},{id:'E',left:50,top:70},{id:'F',left:80,top:70}
 ];
 
 function placeTimers() {
@@ -84,9 +84,10 @@ function placeTimers() {
   coords.forEach(cfg => {
     const t = document.createElement('div');
     t.className = 'timer'; t.id = 't' + cfg.id;
-    const sp = JSON.parse(localStorage.getItem('pos' + cfg.id) || 'null');
-    const left = (sp ? sp.x : cfg.x) / window.innerWidth * 100;
-    const top = (sp ? sp.y : cfg.y) / window.innerHeight * 100;
+
+    const saved = JSON.parse(localStorage.getItem('pos' + cfg.id));
+    const left = saved ? saved.left : cfg.left;
+    const top = saved ? saved.top : cfg.top;
     t.style.left = left + '%';
     t.style.top = top + '%';
 
@@ -131,30 +132,31 @@ function placeTimers() {
     [title, datetime, labels, values, lock].forEach(el => t.appendChild(el));
     document.getElementById('app').appendChild(t);
 
-    let dx = 0, dy = 0;
+    let offsetX = 0, offsetY = 0;
 
     t.addEventListener('pointerdown', e => {
       if (localStorage.getItem('lock' + cfg.id) === '1') return;
       const rect = t.getBoundingClientRect();
-      dx = e.clientX - rect.left;
-      dy = e.clientY - rect.top;
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
       t.setPointerCapture(e.pointerId);
     });
 
     t.addEventListener('pointermove', e => {
       if (!t.hasPointerCapture(e.pointerId)) return;
       if (localStorage.getItem('lock' + cfg.id) === '1') return;
-      const x = e.clientX - dx;
-      const y = e.clientY - dy;
-      t.style.left = (x / window.innerWidth * 100) + '%';
-      t.style.top = (y / window.innerHeight * 100) + '%';
+      const left = (e.clientX - offsetX) / window.innerWidth * 100;
+      const top = (e.clientY - offsetY) / window.innerHeight * 100;
+      t.style.left = left + '%';
+      t.style.top = top + '%';
     });
 
     t.addEventListener('pointerup', e => {
       if (localStorage.getItem('lock' + cfg.id) === '1') return;
       t.releasePointerCapture(e.pointerId);
-      const rect2 = t.getBoundingClientRect();
-      localStorage.setItem('pos' + cfg.id, JSON.stringify({x: rect2.left, y: rect2.top}));
+      const computedLeft = parseFloat(t.style.left);
+      const computedTop = parseFloat(t.style.top);
+      localStorage.setItem('pos' + cfg.id, JSON.stringify({left: computedLeft, top: computedTop}));
     });
 
     (function update(){
@@ -173,7 +175,11 @@ function placeTimers() {
 }
 
 placeTimers();
-window.addEventListener('resize', placeTimers);
+window.addEventListener('orientationchange', () => {
+  setTimeout(() => {
+    placeTimers(); // Recalculate positions with correct % values
+  }, 300);
+});
 </script>
 </body>
 </html>
