@@ -95,18 +95,6 @@
 </head>
 <body>
 
-<button id="notesButton" title="Tasting Notes" style="
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  z-index: 1002;
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: #f2e6d8;
-  cursor: pointer;
-">📝</button>
-
 <div id="notesOverlay" style="
   display: none;
   position: fixed;
@@ -121,7 +109,7 @@
   z-index: 2000;
   overflow: auto;
 ">
-  <h2>Add Tasting Note</h2>
+  <h2 id="notesHeader">Tasting Notes</h2>
   <input type="date" id="noteDate" style="font-size: 16px; margin-bottom: 10px;"><br>
   <textarea id="noteText" maxlength="1000" rows="10" style="width: 100%; font-size: 16px;"></textarea><br>
   <button onclick="saveNote()">Save</button>
@@ -194,6 +182,10 @@ datetime.value = start;
   };
 
   [title, datetime, labels, values, lock].forEach(el => t.appendChild(el));
+  const noteBtn = document.createElement('button');
+  noteBtn.innerText = '📝 Notes';
+  noteBtn.onclick = () => openNotesForTimer(id);
+  t.appendChild(noteBtn);
   document.getElementById('app').appendChild(t);
 
   let offsetX = 0, offsetY = 0;
@@ -258,33 +250,39 @@ window.addEventListener('orientationchange', () => {
   }, 300);
 });
 
+let currentNoteTimerId = null;
 
-document.getElementById("notesButton").addEventListener("click", () => {
+function openNotesForTimer(id) {
+  currentNoteTimerId = id;
   document.getElementById("notesOverlay").style.display = "block";
-  displayNotes();
-});
+  document.getElementById("notesHeader").innerText = "Tasting Notes for Barrel " + id;
+  displayNotes(id);
+}
 
 function saveNote() {
   const date = document.getElementById("noteDate").value;
   const text = document.getElementById("noteText").value.trim();
-  if (!date || !text) return alert("Date and note are required.");
-  const notes = JSON.parse(localStorage.getItem("tastingNotes") || "[]");
+  if (!date || !text || !currentNoteTimerId) return alert("Date and note are required.");
+  const key = "notes_" + currentNoteTimerId;
+  const notes = JSON.parse(localStorage.getItem(key) || "[]");
   notes.push({ date, text, timestamp: new Date().toISOString() });
   if (notes.length > 50) notes.shift(); // keep only last 50
-  localStorage.setItem("tastingNotes", JSON.stringify(notes));
+  localStorage.setItem(key, JSON.stringify(notes));
   document.getElementById("noteText").value = "";
-  displayNotes();
+  displayNotes(currentNoteTimerId);
 }
 
 function deleteNote(index) {
-  const notes = JSON.parse(localStorage.getItem("tastingNotes") || "[]");
+  const key = "notes_" + currentNoteTimerId;
+  const notes = JSON.parse(localStorage.getItem(key) || "[]");
   notes.splice(index, 1);
-  localStorage.setItem("tastingNotes", JSON.stringify(notes));
-  displayNotes();
+  localStorage.setItem(key, JSON.stringify(notes));
+  displayNotes(currentNoteTimerId);
 }
 
-function displayNotes() {
-  const notes = JSON.parse(localStorage.getItem("tastingNotes") || "[]");
+function displayNotes(timerId) {
+  const key = "notes_" + timerId;
+  const notes = JSON.parse(localStorage.getItem(key) || "[]");
   const container = document.getElementById("notesDisplay");
   container.innerHTML = "";
   notes
@@ -298,18 +296,6 @@ function displayNotes() {
         "<button onclick='deleteNote(" + (notes.length - 1 - i) + ")'>Delete</button>";
       container.appendChild(div);
     });
-}
-");
-  const container = document.getElementById("notesDisplay");
-  container.innerHTML = "";
-  const sortedDates = Object.keys(notes).sort().reverse();
-  sortedDates.forEach(date => {
-    const section = document.createElement("div");
-    section.innerHTML = "<strong>" + date + "</strong><ul>" +
-      notes[date].map(n => "<li>" + n + "</li>").join("") +
-      "</ul>";
-    container.appendChild(section);
-  });
 }
 
 </script>
