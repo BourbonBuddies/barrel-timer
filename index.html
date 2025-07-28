@@ -110,7 +110,7 @@
   overflow: auto;
 ">
   <h2 id="notesHeader">Tasting Notes</h2>
-  <input type="date" id="noteDate" value="${new Date().toISOString().split("T")[0]}" style="font-size: 16px; margin-bottom: 10px;"><br>
+  <input type="date" id="noteDate" style="font-size: 16px; margin-bottom: 10px;" /><br>
   <textarea id="noteText" maxlength="1000" rows="10" style="width: 100%; font-size: 16px;"></textarea><br>
   <button onclick="saveNote()">Save</button>
   <button onclick="document.getElementById('notesOverlay').style.display='none'">Close</button>
@@ -181,16 +181,22 @@ datetime.value = start;
     lock.innerText = locked ? '🔒' : '🔓';
   };
 
-  [title, datetime, labels, values, lock].forEach(el => t.appendChild(el));
+  
   const noteBtn = document.createElement('button');
-  noteBtn.innerText = '📝 Notes';
-  noteBtn.style.display = 'inline-block';
-  noteBtn.style.marginLeft = '4px';
+  noteBtn.innerText = '📝';
+  noteBtn.style.marginLeft = '6px';
   noteBtn.onclick = () => openNotesForTimer(id);
-  const btnRow = document.createElement('div');
-  btnRow.appendChild(lock);
-  btnRow.appendChild(noteBtn);
-  t.appendChild(btnRow);
+
+  const btnGroup = document.createElement('div');
+  btnGroup.style.display = 'flex';
+  btnGroup.style.justifyContent = 'center';
+  btnGroup.style.gap = '6px';
+  btnGroup.appendChild(lock);
+  btnGroup.appendChild(noteBtn);
+
+  [title, datetime, labels, values].forEach(el => t.appendChild(el));
+  t.appendChild(btnGroup);
+    
   document.getElementById('app').appendChild(t);
 
   let offsetX = 0, offsetY = 0;
@@ -261,6 +267,7 @@ function openNotesForTimer(id) {
   currentNoteTimerId = id;
   document.getElementById("notesOverlay").style.display = "block";
   document.getElementById("notesHeader").innerText = "Tasting Notes for Barrel " + id;
+  document.getElementById("noteDate").value = new Date().toISOString().split("T")[0];
   displayNotes(id);
 }
 
@@ -271,7 +278,7 @@ function saveNote() {
   const key = "notes_" + currentNoteTimerId;
   const notes = JSON.parse(localStorage.getItem(key) || "[]");
   notes.push({ date, text, timestamp: new Date().toISOString() });
-  if (notes.length > 50) notes.shift(); // keep only last 50
+  if (notes.length > 50) notes.shift();
   localStorage.setItem(key, JSON.stringify(notes));
   document.getElementById("noteText").value = "";
   displayNotes(currentNoteTimerId);
