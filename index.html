@@ -266,7 +266,9 @@ let currentNoteTimerId = null;
 function openNotesForTimer(id) {
   currentNoteTimerId = id;
   document.getElementById("notesOverlay").style.display = "block";
-  document.getElementById("notesHeader").innerText = "Tasting Notes for Barrel " + id;
+  const titleInput = document.querySelector(`#t${id} input[type='text']`);
+  const title = titleInput ? titleInput.value : "Barrel " + id;
+  document.getElementById("notesHeader").innerText = "Tasting Notes for " + title;
   document.getElementById("noteDate").value = new Date().toISOString().split("T")[0];
   displayNotes(id);
 }
